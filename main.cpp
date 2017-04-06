@@ -27,7 +27,8 @@ int main() {
 	start = GetTickCount();
 	ThreadSafeObjectPool<Test2> pool;
 	std::list<Test2 *> results;
-	for (int i = 0; i < 300; ++i) {
+	
+	for (int i = 0; i < 3000000; ++i) {
 		if (i % 2 == 0) {
 			auto res = pool.create(i, 'p');
 			res->foo(i);

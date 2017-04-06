@@ -2,7 +2,7 @@
 using namespace std;
 
 BufferPool::BufferPool(std::size_t objectSize, std::size_t objectAlignment, std::size_t chunkSize)
-	: NumberOfObjectsPerChunk(chunkSize), NumberOfFreeObjects(0) {
+	: NumberOfObjectsPerChunk(chunkSize) {
 	if (objectSize > this->ObjectSize){
 		this->ObjectSize = objectSize;
 	}
@@ -10,7 +10,7 @@ BufferPool::BufferPool(std::size_t objectSize, std::size_t objectAlignment, std:
 	if (this->ObjectAlignment == objectAlignment){
 		this->ObjectAlignment = 0;
 	}
-	ChunkAlignment = objectAlignment - ((sizeof(ChunkHeader) + sizeof(Chunk)) % objectAlignment);
+	ChunkAlignment = objectAlignment - (sizeof(Chunk) % objectAlignment);
 	if (this->ChunkAlignment == objectAlignment){
 		ChunkAlignment = 0;
 	}
@@ -20,8 +20,9 @@ void BufferPool::destory() {
 	for (Chunk const *chunk : Chunks) {
 		delete[] reinterpret_cast<unsigned char const *>(chunk);
 	}
+	Chunks.clear();
 }
-
+/// 申请一个新的块 内存布局为 chunk + chunkalignment + numofobjectperchunk个Object (chunkHeader  + object + objectAlignment)
 void BufferPool::allocateChunk() {
 	const std::size_t chunkSize = getChunkSize();
 	Chunk *newChunk = reinterpret_cast<Chunk *>(new unsigned char[chunkSize]);
@@ -39,7 +40,7 @@ void BufferPool::allocateChunk() {
 		data += ObjectSize + ObjectAlignment;
 	}
 }
-
+// 申请一个object的空间
 void * BufferPool::allocateMemory() {
 	if (NumberOfFreeObjects == 0) {
 		allocateChunk();
@@ -66,10 +67,12 @@ void BufferPool::deallocateMemory(void * address) {
 	chunk->EmptySlotsList.push(reinterpret_cast<Link *>(address));
 	++NumberOfFreeObjects;
 	--NumberOfObjects;
+	// 每次将回收的chunk放在最前边 为了尽量减少系统内存分配
 	if (chunk != Chunks.front()) {
 		Chunks.remove(chunk);
 		Chunks.push_front(chunk);
 	}
+	// 回收chunk
 	if (chunk->NumberOfEmptySlots == NumberOfObjectsPerChunk) {
 		delete[] reinterpret_cast<unsigned char const *>(chunk);
 		Chunks.pop_front();

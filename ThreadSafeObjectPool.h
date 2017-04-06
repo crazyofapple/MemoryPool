@@ -12,7 +12,7 @@ public:
 	T* create(Args&&... args) {
 		void* address = nullptr;
 		{
-			std::lock_guard<decltype(spinLock)> lock(spinLock);
+			//std::lock_guard<decltype(spinLock)> lock(spinLock);
 			address = allocateMemory();
 		}
 		return new (address) T(std::forward<Args>(args)...);
@@ -24,7 +24,7 @@ public:
 	void destory(T* object) {
 		assert(object && "Invalid object");
 		object->~T();
-		std::lock_guard<decltype(spinLock)> lock(spinLock);
+		//std::lock_guard<decltype(spinLock)> lock(spinLock);
 		deallocateMemory(object);
 	}
 private:
